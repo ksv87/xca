@@ -173,6 +173,34 @@ void NewKey::updateCurves(unsigned min, unsigned max, unsigned long ec_flags)
 	curveBox->insertSeparator(curveBox->count());
 	addCurveBoxCurves(curve_other);
 
+    QString sn1(OBJ_nid2sn(NID_id_tc26_gost_3410_2012_256_paramSetA));
+    QString p1, comment1 = "GOST 2012 256 paramset A";
+    if (comment1.isEmpty())
+        comment1 = "---";
+    p1 = sn1 + ": " + comment1;
+    gost12Box->addItem(sn1 + ": " + comment1, NID_id_tc26_gost_3410_2012_256_paramSetA);
+
+    QString sn2(OBJ_nid2sn(NID_id_tc26_gost_3410_2012_256_paramSetB));
+    QString p2, comment2 = "GOST 2012 256 paramset B";
+    if (comment2.isEmpty())
+        comment2 = "---";
+    p2 = sn2 + ": " + comment2;
+    gost12Box->addItem(sn2 + ": " + comment2, NID_id_tc26_gost_3410_2012_256_paramSetB);
+
+    QString sn3(OBJ_nid2sn(NID_id_tc26_gost_3410_2012_256_paramSetC));
+    QString p3, comment3 = "GOST 2012 256 paramset C";
+    if (comment3.isEmpty())
+        comment3 = "---";
+    p3 = sn3 + ": " + comment3;
+    gost12Box->addItem(sn3 + ": " + comment3, NID_id_tc26_gost_3410_2012_256_paramSetC);
+
+    QString sn4(OBJ_nid2sn(NID_id_tc26_gost_3410_2012_256_paramSetD));
+    QString p4, comment4 = "GOST 2012 256 paramset D";
+    if (comment4.isEmpty())
+        comment4 = "---";
+    p4 = sn4 + ": " + comment4;
+    gost12Box->addItem(sn4 + ": " + comment4, NID_id_tc26_gost_3410_2012_256_paramSetD);
+
 	int default_index = curveBox->findData(
 				QVariant(keyjob::defaultjob.ec_nid));
 	curveBox->setCurrentIndex(default_index == -1 ? 0 : default_index);
@@ -190,6 +218,9 @@ void NewKey::on_keyType_currentIndexChanged(int idx)
 	keySizeLabel->setVisible(ki.ktype.length);
 	keyLength->setVisible(ki.ktype.length);
 
+    gost12Box->setVisible(ki.ktype.gost2012);
+    gost12lable->setVisible(ki.ktype.gost2012);
+
 	rememberDefault->setEnabled(!ki.card);
 	if (ki.ktype.curve && ki.card) {
 		updateCurves(ki.minKeySize, ki.maxKeySize, ki.ec_flags);
@@ -202,9 +233,12 @@ keyjob NewKey::getKeyJob() const
 	keyListItem selected = keyType->itemData(keyType->currentIndex())
 						.value<keyListItem>();
 	job.ktype = selected.ktype;
-	if (job.isEC()) {
+    if (job.isEC()) {
 		int idx = curveBox->currentIndex();
 		job.ec_nid = curveBox->itemData(idx).toInt();
+    } else if (job.isGOST2012()){
+        int idx = gost12Box->currentIndex();
+        job.ec_nid = gost12Box->itemData(idx).toInt();
 	} else {
 		QString size = keyLength->currentText();
 		size.replace(QRegExp("[^0-9]"), "");

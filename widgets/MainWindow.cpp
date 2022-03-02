@@ -102,7 +102,7 @@ MainWindow::MainWindow() : QMainWindow()
 	homedir = getHomeDir();
 
 	ERR_load_crypto_strings();
-	OpenSSL_add_all_algorithms();
+    OPENSSL_add_all_algorithms_conf();
 
 	EVP_add_digest_alias(SN_sha1,SN_ecdsa_with_SHA1);
 	EVP_add_digest_alias(SN_sha224,SN_ecdsa_with_SHA224);

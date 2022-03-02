@@ -85,6 +85,8 @@ if (NOT OPENSSL_ROOT_DIR)
   get_filename_component(OPENSSL_ROOT_DIR ${OPENSSL_INCLUDE_DIR} DIRECTORY)
 endif()
 
+include_directories("C:/Users/ksv/Documents/GitHub/engine")
+
 target_link_libraries(${CMAKE_PROJECT_NAME}
 	core widgets core
 	OpenSSL::Crypto
@@ -136,7 +138,7 @@ add_subdirectory(widgets)
 
 include(misc/CMakeLists.txt)
 include(lang/CMakeLists.txt)
-include(doc/CMakeLists.txt)
+#include(doc/CMakeLists.txt)
 include(img/CMakeLists.txt)
 
 install(TARGETS ${CMAKE_PROJECT_NAME}
@@ -186,7 +188,7 @@ elseif(WIN32)
     COMMENT "Running windeployqt..."
   )
   set(QT_USE_QTMAIN TRUE)
-  set(CPACK_GENERATOR WIX)
+  set(CPACK_GENERATOR 7Z)
   set(CPACK_PACKAGE_VENDOR "Christian Hohnstädt")
   set(CPACK_WIX_TEMPLATE "${PROJECT_SOURCE_DIR}/misc/xca.wxs")
   set(CPACK_WIX_UPGRADE_GUID "23fdacfe-3ef8-45b4-81e8-b0c90244c217")

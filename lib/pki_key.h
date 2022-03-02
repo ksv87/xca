@@ -33,14 +33,16 @@ class keytype
 	{
 		return QList<keytype> {
 			keytype(EVP_PKEY_RSA, "RSA", CKM_RSA_PKCS_KEY_PAIR_GEN,
-				false, true),
+                false, true, false),
 			keytype(EVP_PKEY_DSA, "DSA", CKM_DSA_KEY_PAIR_GEN,
-				false, true),
+                false, true, false),
+            keytype(EVP_PKEY_GOST3410_2012_256, "GOST2012", CKM_GOSTR3410_WITH_GOSTR3411_2012_256 ,
+                false, false, true),
 #ifndef OPENSSL_NO_EC
 			keytype(EVP_PKEY_EC, "EC", CKM_EC_KEY_PAIR_GEN,
-				true, false),
+                true, false, false),
 #ifdef EVP_PKEY_ED25519
-			keytype(EVP_PKEY_ED25519, "ED25519", CKM_VENDOR_DEFINED, false, false),
+            keytype(EVP_PKEY_ED25519, "ED25519", CKM_VENDOR_DEFINED, false, false, false),
 #endif
 #endif
 		};
@@ -48,12 +50,12 @@ class keytype
 	int type;
 	QString name;
 	CK_MECHANISM_TYPE mech;
-	bool curve, length;
+    bool curve, length, gost2012;
 
-	keytype(int t, const QString &n, CK_MECHANISM_TYPE m, bool c, bool l)
-			: type(t), name(n), mech(m), curve(c), length(l) { }
+    keytype(int t, const QString &n, CK_MECHANISM_TYPE m, bool c, bool l, bool g12)
+            : type(t), name(n), mech(m), curve(c), length(l), gost2012(g12) { }
 	keytype() : type(-1), name(QString()), mech(0),
-			curve(false), length(true) { }
+            curve(false), length(true), gost2012(false) { }
 	bool isValid()
 	{
 		return type != -1;
@@ -116,7 +118,7 @@ class keyjob
 		ktype = keytype::byName(sl[0]);
 		size = DEFAULT_KEY_LENGTH;
 		ec_nid = NID_undef;
-		if (isEC())
+        if (isEC() || isGOST2012())
 			ec_nid = OBJ_txt2nid(sl[1].toLatin1());
 		else if (!isED25519())
 			size = sl[1].toInt();
@@ -137,20 +139,26 @@ class keyjob
 	}
 	bool isEC() const
 	{
-		return ktype.type == EVP_PKEY_EC;
+        return ktype.type == EVP_PKEY_EC;
 	}
+    bool isGOST2012() const
+    {
+        return ktype.type == EVP_PKEY_GOST3410_2012_256;
+    }
 	bool isED25519() const
 	{
 #ifdef EVP_PKEY_ED25519
-		return ktype.type == EVP_PKEY_ED25519;
+        return ktype.type == EVP_PKEY_ED25519;
 #else
 		return false;
 #endif
 	}
 	bool isValid()
 	{
-		if (!ktype.isValid())
-			return false;
+        if (!ktype.isValid())
+            return false;
+        if (isGOST2012())
+            return true;
 		if (isED25519())
 			return true;
 		if (isEC() && builtinCurves.containNid(ec_nid))

@@ -17,6 +17,9 @@
 #include "PwDialogCore.h"
 #include "XcaWarningCore.h"
 
+#include "e_gost_err.h"
+#include "gost_lcl.h"
+
 #include <openssl/rand.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
@@ -92,6 +95,28 @@ void pki_evp::generate(const keyjob &task)
 	BN_GENCB_set_old(bar, XcaProgress::inc, &progress);
 
 	switch (task.ktype.type) {
+    case EVP_PKEY_GOST3410_2012_256: {
+        EVP_PKEY *key1 = EVP_PKEY_new(), *newkey = NULL;
+        EVP_PKEY_CTX *ctx = NULL;
+
+        EVP_PKEY_set_type_str(key1, "gost2012_256", strlen("gost2012_256"));
+
+        ctx = EVP_PKEY_CTX_new(key1, NULL);
+
+        EVP_PKEY_keygen_init(ctx);
+
+        if(task.ec_nid == NID_id_tc26_gost_3410_2012_256_paramSetA){
+            EVP_PKEY_CTX_ctrl_str(ctx, "paramset", "A");
+        }
+
+        EVP_PKEY_keygen(ctx, &newkey);
+
+        key = newkey;
+        if(ctx)
+            EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(key1);
+       break;
+    }
 	case EVP_PKEY_RSA: {
 		RSA *rsakey = RSA_new();
 		BIGNUM *e = BN_new();
@@ -179,6 +204,9 @@ static bool EVP_PKEY_isPrivKey(EVP_PKEY *key)
 	int keytype = EVP_PKEY_id(key);
 
 	switch (EVP_PKEY_type(keytype)) {
+        case EVP_PKEY_GOST3410_2012_256:
+        return EC_KEY_get0_private_key(
+            EVP_PKEY_get0_EC_KEY(key)) ? true: false;
 		case EVP_PKEY_RSA:
 			RSA_get0_key(EVP_PKEY_get0_RSA(key), NULL, NULL, &b);
 			return b ? true: false;
@@ -669,6 +697,11 @@ bool pki_evp::pem(BioByteArray &b)
 		pkey = decryptKey();
 		keytype = EVP_PKEY_id(pkey);
 		switch (keytype) {
+        case EVP_PKEY_GOST3410_2012_256:
+            PEM_write_bio_PrivateKey(b,
+                pkey,
+                NULL, NULL, 0, NULL, NULL);
+            break;
 		case EVP_PKEY_RSA:
 			PEM_write_bio_RSAPrivateKey(b,
 				EVP_PKEY_get0_RSA(pkey),
@@ -827,6 +860,10 @@ bool pki_evp::verify_priv(EVP_PKEY *pkey) const
 		RAND_bytes(data, datalen);
 		Q_CHECK_PTR(ctx);
 		verify = false;
+
+        if (EVP_PKEY_id(pkey) == EVP_PKEY_ED25519){
+            throw("TEST!");
+        }
 
 		/* Sign some random data in "data" */
 #ifdef EVP_PKEY_ED25519
