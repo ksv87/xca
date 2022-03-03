@@ -17,9 +17,6 @@
 #include "PwDialogCore.h"
 #include "XcaWarningCore.h"
 
-#include "e_gost_err.h"
-#include "gost_lcl.h"
-
 #include <openssl/rand.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
@@ -99,15 +96,15 @@ void pki_evp::generate(const keyjob &task)
         EVP_PKEY *key1 = EVP_PKEY_new(), *newkey = NULL;
         EVP_PKEY_CTX *ctx = NULL;
 
-        EVP_PKEY_set_type_str(key1, "gost2012_256", strlen("gost2012_256"));
+        EVP_PKEY_set_type(key1, task.ktype.type);
 
         ctx = EVP_PKEY_CTX_new(key1, NULL);
 
         EVP_PKEY_keygen_init(ctx);
 
-        if(task.ec_nid == NID_id_tc26_gost_3410_2012_256_paramSetA){
-            EVP_PKEY_CTX_ctrl_str(ctx, "paramset", "A");
-        }
+        //if(task.ec_nid == NID_id_tc26_gost_3410_2012_256_paramSetA){
+            EVP_PKEY_CTX_ctrl(ctx, task.ktype.type, -1, EVP_PKEY_ALG_CTRL+1, task.ec_nid, NULL);
+        //}
 
         EVP_PKEY_keygen(ctx, &newkey);
 
@@ -698,8 +695,8 @@ bool pki_evp::pem(BioByteArray &b)
 		keytype = EVP_PKEY_id(pkey);
 		switch (keytype) {
         case EVP_PKEY_GOST3410_2012_256:
-            PEM_write_bio_PrivateKey(b,
-                pkey,
+            PEM_write_bio_ECPrivateKey(b,
+                EVP_PKEY_get0_EC_KEY(pkey),
                 NULL, NULL, 0, NULL, NULL);
             break;
 		case EVP_PKEY_RSA:
@@ -861,7 +858,7 @@ bool pki_evp::verify_priv(EVP_PKEY *pkey) const
 		Q_CHECK_PTR(ctx);
 		verify = false;
 
-        if (EVP_PKEY_id(pkey) == EVP_PKEY_ED25519){
+        if (EVP_PKEY_id(pkey) == EVP_PKEY_GOST3410_2012_256){
             throw("TEST!");
         }
 

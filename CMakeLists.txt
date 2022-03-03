@@ -85,8 +85,6 @@ if (NOT OPENSSL_ROOT_DIR)
   get_filename_component(OPENSSL_ROOT_DIR ${OPENSSL_INCLUDE_DIR} DIRECTORY)
 endif()
 
-include_directories("C:/Users/ksv/Documents/GitHub/engine")
-
 target_link_libraries(${CMAKE_PROJECT_NAME}
 	core widgets core
 	OpenSSL::Crypto
